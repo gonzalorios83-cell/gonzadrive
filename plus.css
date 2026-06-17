@@ -1,0 +1,29 @@
+.plus-pill{
+  border:1px solid rgba(41,216,255,.38)!important;
+  border-radius:14px!important;
+  background:linear-gradient(180deg,rgba(12,30,48,.95),rgba(5,14,25,.92))!important;
+  cursor:pointer!important;
+  min-height:54px!important;
+  color:#fff!important;
+}
+.plus-dot{
+  width:13px;height:13px;border-radius:50%;display:inline-block;background:#7c8798;box-shadow:0 0 14px rgba(124,135,152,.3);
+}
+.plus-dot.ok{background:#25ff9c;box-shadow:0 0 14px rgba(37,255,156,.55)}
+.plus-dot.warn{background:#ffcc3d;box-shadow:0 0 14px rgba(255,204,61,.5)}
+.plus-panel{padding:28px;min-width:min(520px,calc(100vw - 28px))}
+.plus-panel h3{margin:0 0 10px;font-size:25px}
+.plus-panel p{color:#b8c4d4;line-height:1.42;margin:8px 0 18px}
+.plus-status{border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px;background:rgba(255,255,255,.06);color:#dce6f4;margin:14px 0;font-size:15px}
+.plus-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}
+.plus-actions button,.plus-panel .wide-btn{border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;border-radius:10px;padding:13px 14px;cursor:pointer;font-weight:700}
+.plus-actions .primary,.plus-panel .primary{background:#147cff;border-color:#147cff}
+.plus-actions .danger{border-color:rgba(255,80,80,.45);color:#ff9b9b}
+.plus-panel small{display:block;color:#94a5ba;line-height:1.35;margin-top:14px}
+.plus-hidden{display:none!important}
+.plus-file-input{display:none}
+@media(max-width:920px){
+  .plus-pill{padding:0 10px!important;min-height:46px!important}
+  .plus-pill small{display:none!important}
+  .plus-actions{grid-template-columns:1fr}
+}

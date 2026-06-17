@@ -1,0 +1,44 @@
+PUNTO SMART OS PLUS - DRIVE
+
+Subir estos 3 archivos a la raíz del repo:
+
+- plus-config.js
+- plus-drive.js
+- plus.css
+
+En index.html, dentro de <head>, después de smartos-extra.css, agregar:
+
+<link rel="stylesheet" href="plus.css" />
+
+Antes de </body>, después de script.js, agregar:
+
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="plus-config.js"></script>
+<script src="plus-drive.js"></script>
+
+Para que sincronice de verdad con Drive:
+
+1. Crear proyecto en Google Cloud.
+2. Activar Google Drive API.
+3. Crear OAuth Client ID tipo Web.
+4. Autorizar este origen:
+   https://gonzalorios83-cell.github.io
+5. Pegar el Client ID en plus-config.js.
+
+Qué guarda:
+- accesos
+- orden
+- categorías
+- iconos
+- preferencias
+
+Qué NO guarda:
+- claves
+- datos bancarios
+- documentos
+- información sensible
+
+Archivo usado en el Drive del usuario:
+- puntosmart-config.json
+
+Se guarda en appDataFolder: queda asociado al usuario y a la app.

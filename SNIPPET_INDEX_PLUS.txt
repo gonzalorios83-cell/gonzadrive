@@ -1,0 +1,9 @@
+EN <head>, después de smartos-extra.css:
+
+<link rel="stylesheet" href="plus.css" />
+
+ANTES DE </body>, después de script.js:
+
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="plus-config.js"></script>
+<script src="plus-drive.js"></script>
