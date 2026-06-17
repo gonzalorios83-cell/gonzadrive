@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#020713" />
+  <title>Punto Smart OS</title>
+
+  <link rel="icon" type="image/png" href="favicon.png" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="apple-touch-icon" href="favicon.png" />
+
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="smartos-extra.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="Punto Smart OS">
+        <span class="brand-mark"></span>
+        <span class="brand-text"><span>PUNTO</span><strong>SMART OS</strong></span>
+      </a>
+
+      <div class="status-zone">
+        <div class="status-pill hide-small">
+          <span class="status-icon">◷</span>
+          <span><b id="clock">--:--</b><small id="dateText">Cargando...</small></span>
+        </div>
+        <a class="status-pill hide-small" data-open="https://www.google.com/search?q=clima+buenos+aires" href="https://www.google.com/search?q=clima+buenos+aires" target="_blank" rel="noopener">
+          <span class="status-icon weather">☁</span>
+          <span><b>Clima</b><small>Buenos Aires</small></span>
+        </a>
+        <a class="status-pill dolar" href="https://dolarhoy.com/" target="_blank" rel="noopener">
+          <span class="dolar-logo">$</span>
+          <span><b>Dólar Hoy</b></span>
+        </a>
+        <button class="gear" id="resetBtn" title="Restaurar orden y accesos">⚙</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="search-card">
+        <span>⌕</span>
+        <input id="searchInput" type="search" autocomplete="off" placeholder="Buscar aplicaciones o sitios..." />
+      </section>
+
+      <a class="ad-banner main-ad" href="https://wa.me/5491148706501?text=Hola%2C%20quiero%20consultar%20por%20un%20espacio%20publicitario%20en%20Punto%20Smart%20OS" target="_blank" rel="noopener">
+        <span class="ad-icon">↗</span>
+        <span class="ad-copy"><b>Impulsá tu negocio</b><small>Publicidad efectiva, resultados reales.</small></span>
+        <span class="ad-cta">ANUNCIÁ ACÁ</span>
+      </a>
+
+      <section class="panel wide" data-section="Favoritos y Esenciales">
+        <div class="panel-title"><span>★</span><h2>Favoritos y Esenciales</h2></div>
+        <div class="icon-grid" id="favoritesGrid"></div>
+      </section>
+
+      <section class="panel wide" data-section="Compras y Contenido">
+        <div class="panel-title"><span>🛒</span><h2>Compras y Contenido</h2></div>
+        <div class="icon-grid" id="contentGrid"></div>
+      </section>
+
+      <section class="panel wide" data-section="IA y Productividad">
+        <div class="panel-title"><span>✦</span><h2>IA y Productividad</h2></div>
+        <div class="icon-grid" id="aiGrid"></div>
+      </section>
+
+      <section class="folder-board">
+        <article class="panel folder-panel" data-folder="tramites">
+          <button class="folder-open" data-folder="tramites" aria-label="Abrir carpeta Trámites">›</button>
+          <div class="panel-title"><span>▣</span><h2>Trámites</h2></div>
+          <div class="mini-grid" id="tramitesGrid"></div>
+        </article>
+
+        <article class="panel folder-panel" data-folder="noticias">
+          <button class="folder-open" data-folder="noticias" aria-label="Abrir carpeta Noticias y Deportes">›</button>
+          <div class="panel-title"><span>▣</span><h2>Noticias y Deportes</h2></div>
+          <div class="mini-grid" id="noticiasGrid"></div>
+        </article>
+
+        <article class="panel folder-panel" data-folder="bancos">
+          <button class="folder-open" data-folder="bancos" aria-label="Abrir carpeta Bancos">›</button>
+          <div class="panel-title"><span>▣</span><h2>Bancos</h2></div>
+          <div class="mini-grid" id="bancosGrid"></div>
+        </article>
+
+        <article class="panel folder-panel" data-folder="negocio">
+          <button class="folder-open" data-folder="negocio" aria-label="Abrir carpeta Negocio y Proveedores">›</button>
+          <div class="panel-title"><span>▣</span><h2>Negocio / Proveedores</h2></div>
+          <div class="mini-grid" id="negocioGrid"></div>
+        </article>
+      </section>
+
+      <section class="custom-area">
+        <div class="custom-left">
+          <div class="custom-title">Tus accesos personalizados <span title="Se guardan en este dispositivo">ⓘ</span></div>
+          <div class="custom-grid" id="customGrid"></div>
+        </div>
+        <article class="help-card">
+          <span class="help-spark">✦</span>
+          <div>
+            <b>Personalizá tu Smart OS</b>
+            <p>Agregá los sitios y aplicaciones que más usás. Tocá una baldosa libre, pegá el link y guardalo.</p>
+            <button id="howBtn">¿Cómo agregar un acceso?</button>
+          </div>
+        </article>
+      </section>
+
+      <a class="ad-banner bottom-ad" href="https://wa.me/5491148706501?text=Hola%2C%20quiero%20consultar%20por%20un%20espacio%20publicitario%20en%20Punto%20Smart%20OS" target="_blank" rel="noopener">
+        <span class="ad-icon">📣</span>
+        <span class="ad-copy"><b>Llegá a más personas</b><small>Anunciá tu producto o servicio en Punto Smart OS.</small></span>
+        <span class="ad-cta">ANUNCIÁ ACÁ</span>
+      </a>
+    </main>
+
+    <footer class="footer">
+      <div><b>PUNTO SMART OS</b><small>Tu portal. Todo en un lugar.</small></div>
+      <button id="editBtn">✎ Editar</button>
+      <button id="supportBtn">? Soporte</button>
+      <button id="suggestBtn">☏ Sugerencias</button>
+      <span>© 2026 Punto Smart OS</span>
+    </footer>
+  </div>
+
+  <dialog id="customDialog" class="modal">
+    <form method="dialog" id="customForm">
+      <h3>Agregar página o aplicación</h3>
+      <label>Nombre
+        <input id="customName" maxlength="24" placeholder="Ej: Proveedor celulares" required />
+      </label>
+      <label>Link
+        <input id="customUrl" type="url" placeholder="https://www.ejemplo.com" required />
+      </label>
+      <label>Icono opcional
+        <input id="customIcon" type="url" placeholder="https://.../icono.png" />
+      </label>
+      <p class="modal-note">Si no cargás icono, intenta traer el favicon automáticamente. Si falla, usa la inicial del nombre.</p>
+      <div class="modal-actions">
+        <button type="button" class="danger" id="deleteCustomBtn">Borrar</button>
+        <span></span>
+        <button type="button" id="cancelCustomBtn">Cancelar</button>
+        <button class="primary" value="save">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="folderDialog" class="modal folder-modal">
+    <div class="folder-modal-inner">
+      <button class="modal-close" id="closeFolderBtn">×</button>
+      <h3 id="folderTitle">Carpeta</h3>
+      <div class="icon-grid modal-grid" id="folderModalGrid"></div>
+    </div>
+  </dialog>
+
+  <dialog id="infoDialog" class="modal">
+    <div class="info-content">
+      <button class="modal-close" id="closeInfoBtn">×</button>
+      <h3>Cómo agregar un acceso</h3>
+      <p>1. Tocá una baldosa “Agregar acceso”.</p>
+      <p>2. Escribí el nombre y pegá el link completo, por ejemplo: <b>https://www.ejemplo.com</b>.</p>
+      <p>3. Guardá. El acceso queda en este dispositivo.</p>
+      <p>Para cambiarlo, tocá “Editar” y seleccioná la baldosa.</p>
+    </div>
+  </dialog>
+
+  <script src="script.js"></script>
+</body>
+</html>
