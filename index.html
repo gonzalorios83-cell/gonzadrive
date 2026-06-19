@@ -10,9 +10,8 @@
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <link rel="apple-touch-icon" href="favicon.png" />
 
-  <link rel="stylesheet" href="styles.css" />
-  <link rel="stylesheet" href="smartos-extra.css" />
-  <link rel="stylesheet" href="plus.css" />
+  <link rel="stylesheet" href="styles.css?v=93" />
+  <link rel="stylesheet" href="smartos-extra.css?v=94" />
 </head>
 <body>
   <div class="app-shell">
@@ -40,9 +39,31 @@
     </header>
 
     <main>
-      <section class="search-card">
-        <span>⌕</span>
-        <input id="searchInput" type="search" autocomplete="off" placeholder="Buscar aplicaciones o sitios..." />
+      <section class="smart-search" aria-label="Smart Search">
+        <div class="smart-search-head">
+          <span class="smart-search-badge">Smart Search</span>
+          <small>Buscá según intención: web, IA, videos, comprar, comparar, fútbol, trámites, noticias, lugares, proveedores, soporte, trabajo y redes.</small>
+        </div>
+        <form id="smartSearchForm" class="smart-search-box">
+          <span class="smart-search-icon">⌕</span>
+          <input id="searchInput" type="search" autocomplete="off" placeholder="¿Qué querés buscar?" />
+          <button id="smartSearchGo" class="smart-search-go" type="submit">Buscar</button>
+        </form>
+        <div class="smart-engines" role="group" aria-label="Dónde buscar">
+          <button type="button" class="engine-pill active" data-engine="google">Web</button>
+          <button type="button" class="engine-pill" data-engine="chatgpt">IA</button>
+          <button type="button" class="engine-pill" data-engine="videos">Videos</button>
+          <button type="button" class="engine-pill" data-engine="comprar">Comprar</button>
+          <button type="button" class="engine-pill" data-engine="comparar">Comparar</button>
+          <button type="button" class="engine-pill" data-engine="futbol">Fútbol</button>
+          <button type="button" class="engine-pill" data-engine="tramites">Trámites</button>
+          <button type="button" class="engine-pill" data-engine="noticias">Noticias</button>
+          <button type="button" class="engine-pill" data-engine="lugares">Lugares</button>
+          <button type="button" class="engine-pill" data-engine="proveedores">Proveedores</button>
+          <button type="button" class="engine-pill" data-engine="soporte">Soporte</button>
+          <button type="button" class="engine-pill" data-engine="trabajo">Trabajo</button>
+          <button type="button" class="engine-pill" data-engine="redes">Redes</button>
+        </div>
       </section>
 
       <a class="ad-banner main-ad" href="https://wa.me/5491148706501?text=Hola%2C%20quiero%20consultar%20por%20un%20espacio%20publicitario%20en%20Punto%20Smart%20OS" target="_blank" rel="noopener">
@@ -164,9 +185,6 @@
     </div>
   </dialog>
 
-<script src="script.js"></script>
-<script src="https://accounts.google.com/gsi/client"></script>
-<script src="plus-config.js?v=31"></script>
-<script src="plus-drive.js?v=31"></script>
+  <script src="script.js?v=93"></script>
 </body>
 </html>

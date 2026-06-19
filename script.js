@@ -2,7 +2,7 @@ const groups = {
   favorites: [
     app('Google','https://www.google.com/','google.com'),
     app('YouTube','https://www.youtube.com/','youtube.com'),
-    app('Gmail','https://mail.google.com/','gmail.com'),
+    app('Gmail','https://mail.google.com/','gmail.com', false, '', 'https://ssl.gstatic.com/ui/v1/icons/mail/rfr/gmail.ico'),
     app('Hotmail','https://outlook.live.com/mail/','outlook.live.com'),
     app('WhatsApp Web','https://web.whatsapp.com/','whatsapp.com'),
     app('Instagram','https://www.instagram.com/','instagram.com'),
@@ -12,7 +12,7 @@ const groups = {
     app('Traductor','https://translate.google.com/','translate.google.com'),
     app('Clima','https://www.google.com/search?q=clima+buenos+aires','weather.com'),
     app('X.com','https://x.com/','x.com', true),
-    app('Calendario','https://calendar.google.com/','calendar.google.com'),
+    app('Calendario','https://calendar.google.com/','calendar.google.com', false, '', 'https://ssl.gstatic.com/calendar/images/favicon_v2014_32.ico'),
     app('Calculadora','https://www.google.com/search?q=calculadora','calculator.net', true)
   ],
   content: [
@@ -72,9 +72,44 @@ const folderNames = {
 };
 let editMode = false;
 let currentCustomIndex = null;
+let dragState = null;
+const LS_GROUPS_STATE = 'ps_groups_state';
 
-function app(name,url,domain,dark=false,fallback=''){
-  return { id: slug(name), name, url, domain, dark, fallback };
+function cleanGroupItem(item){
+  return {
+    id: item.id || slug(item.name || 'acceso'),
+    name: item.name || 'Acceso',
+    url: item.url || '#',
+    domain: item.domain || '',
+    dark: !!item.dark,
+    fallback: item.fallback || '',
+    icon: item.icon || ''
+  };
+}
+function saveGroupsState(){
+  try{
+    const out = {};
+    Object.keys(groups).forEach(k => out[k] = (groups[k] || []).map(cleanGroupItem));
+    localStorage.setItem(LS_GROUPS_STATE, JSON.stringify(out));
+    window.dispatchEvent(new CustomEvent('ps:groupsChanged'));
+  }catch(e){}
+}
+function restoreGroupsState(){
+  try{
+    const saved = JSON.parse(localStorage.getItem(LS_GROUPS_STATE) || 'null');
+    if(!saved) return;
+    Object.keys(saved).forEach(k => {
+      if(Array.isArray(saved[k]) && Array.isArray(groups[k])){
+        groups[k].length = 0;
+        saved[k].forEach(item => groups[k].push(cleanGroupItem(item)));
+      }
+    });
+  }catch(e){}
+}
+
+
+function app(name,url,domain,dark=false,fallback='',icon=''){
+  return { id: slug(name), name, url, domain, dark, fallback, icon };
 }
 function slug(s){ return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); }
 function favicon(domain){ return domain ? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=128` : ''; }
@@ -84,12 +119,26 @@ function normalizeUrl(url){
   if(!/^https?:\/\//i.test(url)) return 'https://' + url;
   return url;
 }
+function openSmartUrl(url){
+  const finalUrl = normalizeUrl(url);
+  try{
+    const opened = window.open(finalUrl,'_blank','noopener');
+    if(!opened) window.location.href = finalUrl;
+  }catch(e){
+    window.location.href = finalUrl;
+  }
+}
+function cleanText(str){
+  return (str || '').toString().trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+}
 
 function tileHTML(item, opts={}){
   const img = item.icon || favicon(item.domain);
   const fallback = item.fallback || (item.name || '?').slice(0,2).toUpperCase();
   const dark = item.dark ? ' dark' : '';
-  return `<button class="tile ${editMode ? 'editing' : ''}" data-id="${item.id}" data-url="${item.url}" ${opts.draggable?'draggable="true"':''} title="${item.name}">
+  const draggable = opts.draggable && editMode ? 'draggable="true"' : '';
+  const groupAttr = opts.group ? `data-group="${opts.group}" data-index="${opts.index || 0}"` : '';
+  return `<button class="tile ${editMode ? 'editing' : ''}" data-id="${item.id}" data-url="${item.url}" ${groupAttr} ${draggable} title="${item.name}">
     <span class="tile-icon${dark}">${img ? `<img src="${img}" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'letter',textContent:'${fallback.replace(/'/g,'')}'}))">` : `<span class="letter">${fallback}</span>`}</span>
     <span class="tile-name">${item.name}</span>
   </button>`;
@@ -99,17 +148,18 @@ function renderGroup(key, elId, mini=false){
   const el = document.getElementById(elId);
   if(!el) return;
   const items = groups[key];
-  el.innerHTML = items.map(i => tileHTML(i,{draggable: !mini})).join('');
+  el.dataset.group = key;
+  el.innerHTML = items.map((i,idx) => tileHTML(i,{draggable: true, group:key, index:idx})).join('');
 }
 
 function renderAll(){
   renderGroup('favorites','favoritesGrid');
   renderGroup('content','contentGrid');
   renderGroup('ai','aiGrid');
-  renderGroup('tramites','tramitesGrid',true);
-  renderGroup('noticias','noticiasGrid',true);
-  renderGroup('bancos','bancosGrid',true);
-  renderGroup('negocio','negocioGrid',true);
+  renderGroup('tramites','tramitesGrid');
+  renderGroup('noticias','noticiasGrid');
+  renderGroup('bancos','bancosGrid');
+  renderGroup('negocio','negocioGrid');
   renderCustom();
   bindTiles();
   bindDrag();
@@ -146,18 +196,27 @@ function domainFromUrl(url){
 
 function bindTiles(){
   document.querySelectorAll('.tile').forEach(btn => {
-    btn.onclick = () => {
+    btn.onclick = (e) => {
+      if(editMode || dragState){
+        e?.preventDefault();
+        e?.stopPropagation();
+        return false;
+      }
       const url = btn.dataset.url;
-      if(editMode) return;
       if(url === '#notes') return openNotes();
-      window.open(normalizeUrl(url),'_blank','noopener');
+      openSmartUrl(url);
     };
   });
   document.querySelectorAll('.custom-tile').forEach(btn => {
-    btn.onclick = () => {
+    btn.onclick = (e) => {
+      if(dragState){
+        e?.preventDefault();
+        e?.stopPropagation();
+        return false;
+      }
       const idx = Number(btn.dataset.index);
       const item = getCustom()[idx];
-      if(item && !editMode){ window.open(normalizeUrl(item.url),'_blank','noopener'); return; }
+      if(item && !editMode){ openSmartUrl(item.url); return; }
       openCustom(idx);
     };
   });
@@ -195,27 +254,81 @@ deleteCustomBtn.onclick = () => {
 };
 
 function bindDrag(){
-  document.querySelectorAll('.wide .tile[draggable="true"]').forEach(tile => {
-    tile.addEventListener('dragstart', e => e.dataTransfer.setData('text/plain', tile.dataset.id));
-    tile.addEventListener('dragover', e => { e.preventDefault(); tile.classList.add('drag-over'); });
+  document.querySelectorAll('.tile[draggable="true"]').forEach(tile => {
+    tile.addEventListener('dragstart', e => {
+      dragState = { id: tile.dataset.id };
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', tile.dataset.id);
+      tile.classList.add('dragging');
+    });
+    tile.addEventListener('dragend', () => {
+      document.querySelectorAll('.drag-over,.dragging,.panel-drop').forEach(el => el.classList.remove('drag-over','dragging','panel-drop'));
+      setTimeout(() => { dragState = null; }, 80);
+    });
+    tile.addEventListener('dragover', e => {
+      if(!editMode) return;
+      e.preventDefault();
+      tile.classList.add('drag-over');
+    });
     tile.addEventListener('dragleave', () => tile.classList.remove('drag-over'));
     tile.addEventListener('drop', e => {
-      e.preventDefault(); tile.classList.remove('drag-over');
+      if(!editMode) return;
+      e.preventDefault();
+      e.stopPropagation();
+      tile.classList.remove('drag-over');
       const fromId = e.dataTransfer.getData('text/plain');
       const toId = tile.dataset.id;
-      swapItems(fromId,toId);
+      if(fromId && toId && fromId !== toId) moveItemToGroup(fromId, tile.dataset.group, toId);
+    });
+  });
+
+  document.querySelectorAll('.icon-grid,.mini-grid').forEach(grid => {
+    const groupKey = grid.dataset.group;
+    if(!groupKey) return;
+    grid.addEventListener('dragover', e => {
+      if(!editMode) return;
+      e.preventDefault();
+      grid.classList.add('panel-drop');
+    });
+    grid.addEventListener('dragleave', e => {
+      if(!grid.contains(e.relatedTarget)) grid.classList.remove('panel-drop');
+    });
+    grid.addEventListener('drop', e => {
+      if(!editMode) return;
+      if(e.target.closest('.tile')) return;
+      e.preventDefault();
+      grid.classList.remove('panel-drop');
+      const fromId = e.dataTransfer.getData('text/plain');
+      if(fromId) moveItemToGroup(fromId, groupKey, null);
     });
   });
 }
-function swapItems(fromId,toId){
-  let aK,aI,bK,bI;
+function findItemLocation(id){
   for(const [k,arr] of Object.entries(groups)){
-    arr.forEach((it,i)=>{ if(it.id===fromId){aK=k;aI=i} if(it.id===toId){bK=k;bI=i} });
+    const idx = arr.findIndex(it => it.id === id);
+    if(idx >= 0) return {group:k, index:idx};
   }
-  if(aK && bK){
-    const temp = groups[aK][aI]; groups[aK][aI] = groups[bK][bI]; groups[bK][bI] = temp; renderAll();
-  }
+  return null;
 }
+function moveItemToGroup(fromId,targetGroup,targetId=null){
+  const from = findItemLocation(fromId);
+  if(!from || !targetGroup || !groups[targetGroup]) return;
+  const item = groups[from.group].splice(from.index,1)[0];
+  let insertIndex = groups[targetGroup].length;
+  if(targetId){
+    insertIndex = groups[targetGroup].findIndex(it => it.id === targetId);
+    if(insertIndex < 0) insertIndex = groups[targetGroup].length;
+  }
+  if(from.group === targetGroup && from.index < insertIndex) insertIndex--;
+  groups[targetGroup].splice(insertIndex,0,item);
+  saveGroupsState();
+  renderAll();
+}
+function swapItems(fromId,toId){
+  const to = findItemLocation(toId);
+  if(to) moveItemToGroup(fromId, to.group, toId);
+}
+
 
 editBtn.onclick = () => { editMode = !editMode; renderAll(); };
 resetBtn.onclick = () => {
@@ -223,8 +336,8 @@ resetBtn.onclick = () => {
 };
 howBtn.onclick = () => infoDialog.showModal();
 closeInfoBtn.onclick = () => infoDialog.close();
-supportBtn.onclick = () => window.open('https://wa.me/5491148706501?text=Hola%2C%20necesito%20soporte%20con%20Punto%20Smart%20OS','_blank','noopener');
-suggestBtn.onclick = () => window.open('https://wa.me/5491148706501?text=Hola%2C%20quiero%20sugerir%20un%20acceso%20para%20Punto%20Smart%20OS','_blank','noopener');
+supportBtn.onclick = () => openSmartUrl('https://wa.me/5491148706501?text=Hola%2C%20necesito%20soporte%20con%20Punto%20Smart%20OS');
+suggestBtn.onclick = () => openSmartUrl('https://wa.me/5491148706501?text=Hola%2C%20quiero%20sugerir%20un%20acceso%20para%20Punto%20Smart%20OS');
 
 Object.keys(folderNames).forEach(key => {
   document.querySelector(`[data-folder="${key}"] .folder-open`)?.addEventListener('click', () => openFolder(key));
@@ -237,17 +350,90 @@ function openFolder(key){
 }
 closeFolderBtn.onclick = () => folderDialog.close();
 
-searchInput.addEventListener('input', e => {
-  const q = e.target.value.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+let smartSearchEngine = 'google';
+const smartSearchDefaults = {
+  google:'https://www.google.com/',
+  chatgpt:'https://chatgpt.com/',
+  videos:'https://www.youtube.com/',
+  comprar:'https://www.mercadolibre.com.ar/',
+  comparar:'https://www.google.com/search?q=comparar+productos',
+  futbol:'https://www.google.com/search?q=futbol+partidos+de+hoy',
+  tramites:'https://www.argentina.gob.ar/',
+  noticias:'https://news.google.com/topstories?hl=es-419&gl=AR&ceid=AR:es-419',
+  lugares:'https://www.google.com/maps',
+  proveedores:'https://www.google.com/search?q=proveedores+mayoristas+argentina',
+  soporte:'https://www.google.com/search?q=soporte+tecnico',
+  trabajo:'https://mail.google.com/',
+  redes:'https://www.google.com/search?q=redes+sociales',
+};
+const smartSearchPlaceholders = {
+  google:'Buscar en la web...',
+  chatgpt:'Preguntarle a la IA...',
+  videos:'Buscar videos, tutoriales o reviews...',
+  comprar:'Buscar para comprar...',
+  comparar:'Comparar modelos, precios o alternativas...',
+  futbol:'Buscar fútbol, partidos, resultados o tabla...',
+  tramites:'Buscar trámites argentinos...',
+  noticias:'Buscar noticias...',
+  lugares:'Buscar lugares, direcciones o comercios...',
+  proveedores:'Buscar proveedores o mayoristas...',
+  soporte:'Buscar solución técnica...',
+  trabajo:'Buscar en herramientas de trabajo...',
+  redes:'Buscar en redes sociales...'
+};
+function buildSmartSearchUrl(engine, query){
+  const q = (query || '').trim();
+  if(!q) return smartSearchDefaults[engine] || smartSearchDefaults.google;
+  const e = encodeURIComponent(q);
+  const dash = e.replace(/%20/g,'-');
+  if(engine === 'videos') return `https://www.youtube.com/results?search_query=${e}`;
+  if(engine === 'comprar') return `https://listado.mercadolibre.com.ar/${dash}`;
+  if(engine === 'comparar') return `https://www.google.com/search?q=${encodeURIComponent('comparar ' + q + ' precio características opiniones')}`;
+  if(engine === 'futbol') return `https://www.google.com/search?q=${encodeURIComponent(q + ' futbol partidos resultados fixture tabla')}`;
+  if(engine === 'tramites') return `https://www.google.com/search?q=${encodeURIComponent(q + ' site:argentina.gob.ar OR site:arca.gob.ar OR site:anses.gob.ar OR site:buenosaires.gob.ar')}`;
+  if(engine === 'noticias') return `https://news.google.com/search?q=${e}&hl=es-419&gl=AR&ceid=AR:es-419`;
+  if(engine === 'lugares') return `https://www.google.com/maps/search/${encodeURIComponent(q + ' cerca de mi')}`;
+  if(engine === 'proveedores') return `https://www.google.com/search?q=${encodeURIComponent('proveedor mayorista ' + q + ' argentina')}`;
+  if(engine === 'soporte') return `https://www.google.com/search?q=${encodeURIComponent('solucion soporte error ' + q)}`;
+  if(engine === 'trabajo') return `https://mail.google.com/mail/u/0/#search/${e}`;
+  if(engine === 'redes') return `https://www.google.com/search?q=${encodeURIComponent(q + ' site:instagram.com OR site:tiktok.com OR site:facebook.com OR site:x.com OR site:linkedin.com')}`;
+  if(engine === 'chatgpt') return `https://chatgpt.com/?q=${e}`;
+  return `https://www.google.com/search?q=${e}`;
+}
+function filterTiles(query){
+  const q = cleanText(query);
   document.querySelectorAll('.tile,.custom-tile').forEach(el => {
-    const text = el.textContent.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-    el.classList.toggle('hidden-search', q && !text.includes(q));
+    const text = cleanText(el.textContent);
+    el.classList.toggle('hidden-search', !!q && !text.includes(q));
+  });
+}
+function setSmartSearchEngine(engine){
+  smartSearchEngine = engine || 'google';
+  document.querySelectorAll('.engine-pill').forEach(btn => btn.classList.toggle('active', btn.dataset.engine === smartSearchEngine));
+  const box = document.querySelector('.smart-search');
+  box?.classList.toggle('local-mode', smartSearchEngine === 'local');
+  if(searchInput) searchInput.placeholder = smartSearchPlaceholders[smartSearchEngine] || '¿Qué querés buscar?';
+}
+searchInput.addEventListener('input', e => filterTiles(e.target.value));
+document.querySelectorAll('.engine-pill').forEach(btn => {
+  btn.addEventListener('click', () => {
+    setSmartSearchEngine(btn.dataset.engine);
+    searchInput.focus();
+    if(btn.dataset.engine === 'local') filterTiles(searchInput.value);
   });
 });
+smartSearchForm?.addEventListener('submit', e => {
+  e.preventDefault();
+  const q = searchInput.value.trim();
+  if(smartSearchEngine === 'local'){ filterTiles(q); return; }
+  openSmartUrl(buildSmartSearchUrl(smartSearchEngine, q));
+});
+setSmartSearchEngine('google');
 
 function tick(){
   const now = new Date();
   clock.textContent = now.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
   dateText.textContent = now.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'}).replace(/^./,c=>c.toUpperCase());
 }
+restoreGroupsState();
 setInterval(tick,1000); tick(); renderAll();
